@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>坦克大战</title>
+	<link rel="stylesheet" href="./css/index.css">
+	<script src="./js/const.js"></script>
+	<script src="./js/level_class.js"></script>
+	<script src="./js/collision.js"></script>
+</head>
+<body>
+	<canvas id="canvas"></canvas>
+	<canvas id="grass"></canvas>
+	<canvas id="ice"></canvas>
+
+
+	<script src="./js/map_class.js"></script>
+	<script src="./js/tank_class.js"></script>
+	<script src="./js/bullet_class.js"></script>
+	<script>
+		var stage =11 ;//关卡
+		var p = 1; //玩家数
+		var tag1 = 1;//两个玩家坦克的标识
+		var tag2 = 2;
+		var hero_tank_arr = [];//存放玩家坦克对象，作为参数传递
+		var canvas = document.getElementById("canvas");
+		var gcanvas = document.getElementById("grass");
+		var icanvas = document.getElementById("ice");
+		canvas.width = SCREEN_W;
+		canvas.height = SCREEN_H;
+		gcanvas.width = SCREEN_W;
+		gcanvas.height = SCREEN_H;
+		icanvas.width = SCREEN_W;
+		icanvas.height = SCREEN_H;
+		// canvas.style.background = SCREEN_C;
+		// gcanvas.style.background = SCREEN_C;
+		icanvas.style.background = SCREEN_C;
+		var ctx = canvas.getContext("2d");
+		var gctx = gcanvas.getContext("2d");
+		var ictx = icanvas.getContext("2d");
+		var map = new Map();
+		//根据玩家数创建坦克
+		if(p == 1){
+			var tank = new Hero(PLAYER1);
+			hero_tank_arr.push(tank);
+		}else if(p == 2){
+			var tank1 = new Hero(PLAYER1,tag1);
+			var tank2 = new Hero(PLAYER2,tag2);
+			hero_tank_arr.push(tank1);
+			hero_tank_arr.push(tank2);
+		}
+		
+		SOURCE_IMG.onload = function(){
+			//刷新画布
+			setInterval(function(){
+					
+					map.draw(stage);
+					// tank.draw();
+					//遍历坦克数组
+					// for(var i =0;i<hero_tank_arr.length;i++){
+					// 	hero_tank_arr[i].draw();
+					// 	if(hero_tank_arr[i].bullets.length>0){
+					// 		if(hero_tank_arr[i].bullets[i].isHit){
+					// 			alert(2);
+					// 			if(!hero_tank_arr[i].bullets[i].isDestroy){
+					// 				alert(3);
+					// 					hero_tank_arr[i].bullets[i].destroy();
+					// 					// hero_tank_arr[i].bullets[i] = null;
+					// 					hero_tank_arr[i].bullets.length = 0;
+					// 			}
+					// 		}else{
+					// 			hero_tank_arr[i].bullets[i].draw();
+					// 		}
+					// 	}
+					// }
+					
+					ctx.clearRect(0,0,512,499);
+					map.draw(stage);
+					for(var i =0;i<hero_tank_arr.length;i++){
+						hero_tank_arr[i].draw();
+						if(hero_tank_arr[i].bullets.length>0){
+							
+							if(hero_tank_arr[i].bullets[i].isHit){
+								
+								if(!hero_tank_arr[i].bullets[i].isDestroy){
+									// alert(1);
+										hero_tank_arr[i].bullets[i].destroy();
+										// hero_tank_arr[i].bullets[i] = null;
+										hero_tank_arr[i].bullets.length = 0;
+								}
+							}else{
+								hero_tank_arr[i].bullets[i].draw();
+							}
+						}
+						
+					}
+
+			},30);
+
+
+			//监听键盘事件
+			document.body.onkeydown = function(){
+			if(p == 1){
+				map.draw(stage,hero_tank_arr);
+				tank.draw();
+				tank.shoot();
+				tank.move();
+			}else if(p == 2){
+				map.draw(stage,hero_tank_arr);
+				tank1.draw();
+				tank2.draw();
+				// tank1.shoot();
+				tank1.move(tag1);
+				tank2.move(tag2);
+			}
+			
+		}
+		}
+		
+	</script>
+</body>
+</html>

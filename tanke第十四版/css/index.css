@@ -1,0 +1,26 @@
+*{
+	margin: 0;
+	padding: 0;
+}
+canvas{
+	position: absolute;
+	top: 30px;
+	left:30px;
+}
+#canvas{
+	z-index: 100;
+	/*display:none;*/
+}
+#grass{
+	z-index:200;
+}
+#ice{
+	z-index:10;
+}
+#gameover{
+	z-index:300;
+}
+.point{
+	position: absolute;
+	top: 500px;
+}

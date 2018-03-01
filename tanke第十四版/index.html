@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>坦克大战</title>
+	<link rel="stylesheet" href="./css/index.css">
+	<script src="./js/const.js"></script>
+	<script src="./js/level_class.js"></script>
+</head>
+<body>
+	<canvas id="canvas"></canvas>
+	<canvas id="grass"></canvas>
+	<canvas id="ice"></canvas>
+	<canvas id="gameover"></canvas>
+	<pre class="point">
+	说明：
+		1、使用键盘的↑和↓选择玩家，按回车键确认
+		2、玩家1通过w、a、s、d控制坦克方向，通过空格键发射子弹
+		3、玩家2(暂时未完善)通过↑ ↓ ← →控制坦克方向，通过j键发射子弹
+		4、开发时使用的chrome浏览器版本 62.0.3202.94
+
+	</pre>
+	<script src="./js/map_class.js"></script>
+	<script src="./js/tank_class.js"></script>
+	<script src="./js/bullet_class.js"></script>
+	<script src="./js/cartoonist.js"></script>
+	<script src="./js/award_class.js"></script>
+	<script>
+		var stage = 1;//关卡
+		var p = 1; //玩家数
+		var gamestate = "start";//start,guodu,battle,win,fail
+		var tag1 = 1;//两个玩家坦克的标识
+		var tag2 = 2;
+		var keyArr = [];//键盘按键数组
+		var hero_tank_arr = [];//存放玩家坦克对象，作为参数传递
+		var enemy_tank_arr = [];//敌方坦克数组
+		var des_enemy_arr = [];//消灭掉的敌方坦克数组
+		var totalenemy = 1;//已经出现的敌方坦克总数
+		var allTanks = [];//用于存放我方和敌方坦克
+		var creatEnemyTankTimer = null;
+		var sum = 0;//改变敌方坦克方向的随机数
+		var homeIsHit = false;//家是否被攻击
+		var getScore = 0;//击败敌方坦克获得的总分数
+		var isHaveAward = false;//当前是否存在奖励
+		var awardArr = [];//奖励数组
+		var canvas = document.getElementById("canvas");
+		var gcanvas = document.getElementById("grass");
+		var icanvas = document.getElementById("ice");
+		var gameovercanvas = document.getElementById("gameover");
+		canvas.width = SCREEN_W;
+		canvas.height = SCREEN_H;
+		gcanvas.width = SCREEN_W;
+		gcanvas.height = SCREEN_H;
+		icanvas.width = SCREEN_W;
+		icanvas.height = SCREEN_H;
+		gameovercanvas.width = SCREEN_W;
+		gameovercanvas.height = SCREEN_H;
+		// canvas.style.background = SCREEN_C;
+		// gcanvas.style.background = SCREEN_C;
+		icanvas.style.background = SCREEN_C;
+		var ctx = canvas.getContext("2d");
+		var gctx = gcanvas.getContext("2d");
+		var ictx = icanvas.getContext("2d");
+		var gameoverctx = gameovercanvas.getContext("2d");
+		var map = new Map();
+		var selecttank = new SelectTank();//选择玩家数的坦克
+		//根据玩家数创建坦克
+		if(p == 1){
+			var tank = new Hero(PLAYER1);
+			var live ;
+			hero_tank_arr.push(tank);
+			setInterval(function(){
+				for(var i=0;i<hero_tank_arr.length;i++){
+					// alert(hero_tank_arr[i].lives);
+					if(hero_tank_arr[i].lives>=0&&hero_tank_arr[i].isDestroy){
+						live = hero_tank_arr[i].lives;
+						hero_tank_arr[i]=null;
+						hero_tank_arr.splice(i,1);
+					hero_tank_arr.push(new Hero(PLAYER1));
+					hero_tank_arr[0].lives = live-1;
+					setTimeout(function(){
+						hero_tank_arr[0].isProtect = false;
+					},3000);
+					if(hero_tank_arr[0].lives==-1){
+						gamestate = "fail";
+					}
+				}
+				}
+				
+			},2000);
+		}else if(p == 2){
+			var tank1 = new Hero(PLAYER1,tag1);
+			var tank2 = new Hero(PLAYER2,tag2);
+			hero_tank_arr.push(tank1);
+			hero_tank_arr.push(tank2);
+		}
+		var enemyTank = new EnemyTank1();
+		enemy_tank_arr.push(enemyTank);
+		setInterval(function(){
+			var fangxiang = parseInt(Math.random()*3);
+			if(enemy_tank_arr.length<4&&totalenemy<20){
+				switch(fangxiang){
+					case 0:
+						var a = new EnemyTank1();
+					break;
+					case 1:
+						var a = new EnemyTank2();
+					break;
+					case 2:
+						var a = new EnemyTank3();
+					break;
+				}
+				
+				a.isAI = true;
+				enemy_tank_arr.push(a);
+				totalenemy++;
+				 // alert(totalenemy);
+			}
+		},5000);
+		SOURCE_IMG.onload = function(){
+			var cartoonist = new Cartoonist();
+			// alert(selecttank.draw());
+			//刷新画布
+			//在这里画所有需要画的东西
+			setInterval(function(){
+				getScore = 0;
+				switch(gamestate){
+					case "start":
+						cartoonist.drawStart();
+					break;
+					case "guodu":
+					cartoonist.drawGuoDuClose(stage);
+					break;
+					case "battle":
+					// alert(11);
+					map.draw(stage);
+					ctx.clearRect(0,0,512,499);
+					map.draw(stage);
+					if(homeIsHit){
+						gamestate = "fail";
+					}
+					//遍历玩家坦克数组
+					// alert(allTanks);
+					for(var i =0;i<hero_tank_arr.length;i++){
+						if(!hero_tank_arr[i].isAttack){
+							hero_tank_arr[i].draw();
+						}else{
+							if(!hero_tank_arr[i].isDestroy){
+								hero_tank_arr[i].destroy();	
+							}
+						}
+						if(hero_tank_arr[i].bullets.length>0){
+							
+							if(hero_tank_arr[i].bullets[i].isHit){
+								
+								if(!hero_tank_arr[i].bullets[i].isDestroy){
+										hero_tank_arr[i].bullets[i].destroy();
+										hero_tank_arr[i].bullets.length = 0;
+								}
+							}else{
+								hero_tank_arr[i].bullets[i].draw();
+							}
+						}
+						
+					}
+					//遍历敌方坦克数组
+					for(var k =0;k<enemy_tank_arr.length;k++){
+						//坦克没有被攻击时
+						if(!enemy_tank_arr[k].isAttack&&enemy_tank_arr.length>0){
+							enemy_tank_arr[k].draw();
+							enemy_tank_arr[k].move();
+							if(!enemy_tank_arr[k].isShooting){
+								 enemy_tank_arr[k].shoot();
+							}else{
+								if(enemy_tank_arr[k].isStop){
+									try{
+										enemy_tank_arr[k].bullets[0].move();
+									}catch(event){
+										console.log(event);
+									}
+									enemy_tank_arr[k].isStop = false;
+								}
+							}
+
+							//画敌方坦克子弹
+						if(enemy_tank_arr[k].bullets.length>0){
+							if(enemy_tank_arr[k].bullets[0].isHit){
+								
+								if(!enemy_tank_arr[k].bullets[0].isDestroy){
+										enemy_tank_arr[k].bullets[0].destroy();
+										enemy_tank_arr[k].bullets.length = 0;
+										enemy_tank_arr[k].isShooting=false;
+								}
+							}else{
+								enemy_tank_arr[k].bullets[0].draw();
+							}
+						}
+						}else{
+							// 坦克被打中停掉运动定时器
+							clearInterval(enemy_tank_arr[k].moveTimer);
+								//画敌方坦克子弹
+						if(enemy_tank_arr[k].bullets.length>0){
+							if(enemy_tank_arr[k].bullets[0].isHit){
+								
+								if(!enemy_tank_arr[k].bullets[0].isDestroy){
+										enemy_tank_arr[k].bullets[0].destroy();
+										enemy_tank_arr[k].bullets.length = 0;
+										enemy_tank_arr[k].isShooting=false;
+								}
+							}else{
+								enemy_tank_arr[k].bullets[0].draw();
+							}
+						}
+							if(!enemy_tank_arr[k].isShooting){
+								 // enemy_tank_arr[k].shoot();
+							}else{
+								if(enemy_tank_arr[k].isStop){
+									enemy_tank_arr[k].bullets[0].move();
+									enemy_tank_arr[k].isStop = false;
+								}else{
+
+								}
+							}
+							if(!enemy_tank_arr[k].isDestroy){
+								enemy_tank_arr[k].destroy();
+							}
+							des_enemy_arr.push(enemy_tank_arr[k]);
+							//遍历击败的敌方坦克数组，根据总分绘制奖励
+							for(var z=0;z<des_enemy_arr.length;z++){
+								getScore+=des_enemy_arr[z].score;
+							}
+							if(getScore==100&&!isHaveAward||getScore==150&&!isHaveAward||getScore==1800&&!isHaveAward||getScore==300&&!isHaveAward){
+								// alert(getScore);
+									// var score_num = parseInt(Math.random()*6);
+									var score_num = 1;
+									switch(score_num){
+										case 0:
+										var addlife = new AddLife();
+										addlife.draw();
+										awardArr.push(addlife);
+										isHaveAward = true;
+										break;
+										case 1:
+										var stopenemy = new StopEnemy();
+										stopenemy.draw();
+										awardArr.push(stopenemy);
+										isHaveAward = true;
+										break;
+										case 2:
+										var armshome = new ArmsHome();
+										armshome.draw();
+										awardArr.push(armshome);
+										isHaveAward = true;
+										break;
+										case 3:
+										var bomb = new Bomb();
+										bomb.draw();
+										awardArr.push(bomb);
+										isHaveAward = true;
+										break;
+										case 4:
+										var star = new Star();
+										star.draw();
+										awardArr.push(star);
+										isHaveAward = true;
+										break;
+										case 5:
+										var protect = new Protect();
+										protect.draw();
+										awardArr.push(protect);
+										isHaveAward = true;
+										break;
+									}
+								}
+							// alert(des_enemy_arr);
+							 enemy_tank_arr.splice(k,1);
+							 if(des_enemy_arr.length==20){
+								stage++;
+								gamestate = "guodu";
+							}
+						}	
+					}
+					break;
+					case "win":
+					alert("you win");
+					break;
+					case "fail":
+					for(var k=0;k<enemy_tank_arr.length;k++){
+						clearInterval(enemy_tank_arr[k].moveTimer);
+					}
+
+					gameoverctx.clearRect(0,0,512,499);
+					cartoonist.drawGameOver();
+					if(cartoonist.y<=200){
+					}
+					break;
+				}
+
+			},20);
+
+			//监听键盘事件
+			document.body.onkeydown = function(event){
+			if(p==1&&gamestate=="start"&&cartoonist.menu_y<=0){
+				switch(event.keyCode){
+					case 38:
+					if(selecttank.y!=SELECT_TANK2[1]){
+						selecttank.y = SELECT_TANK2[1];
+					}else{
+						selecttank.y = SELECT_TANK1[1];
+					}
+					break;
+					case 40:
+					if(selecttank.y != SELECT_TANK1[1]){
+						selecttank.y = SELECT_TANK1[1];
+					}else{
+						selecttank.y = SELECT_TANK2[1];
+					}
+					break;
+					case 13:
+					if(selecttank.y==SELECT_TANK1[1]){
+						p==1;
+						gamestate = "guodu";
+					}
+					if(selecttank.y==SELECT_TANK2[1]){
+						p==2;
+					}
+					break;
+					}
+				}
+			
+			if(p == 1&&gamestate=="battle"){
+				if(keyArr.indexOf(event.keyCode)==-1){
+					keyArr.push(event.keyCode);
+				}
+				map.draw(stage,hero_tank_arr);
+				//这里不能写死
+				if(!hero_tank_arr[0].isAttack){
+					hero_tank_arr[0].draw();
+					hero_tank_arr[0].shoot();
+					hero_tank_arr[0].move();
+				}
+			}else if(p == 2){
+				map.draw(stage,hero_tank_arr);
+				tank1.draw();
+				tank2.draw();
+				// tank1.shoot();
+				tank1.move(tag1);
+				tank2.move(tag2);
+			}
+			
+		}
+		document.body.onkeyup = function(event){
+				// alert(event.keyCode);
+				switch(event.keyCode){
+					case 87:
+						clearInterval(hero_tank_arr[0].moveTimer);
+						hero_tank_arr[0].moveTimer = null;
+						// alert(keyArr);
+					break;
+					case 68:
+						clearInterval(hero_tank_arr[0].moveTimer);
+						hero_tank_arr[0].moveTimer = null;
+					break;
+					case 83:
+						clearInterval(hero_tank_arr[0].moveTimer);
+						hero_tank_arr[0].moveTimer = null;
+					break;
+					case 65:
+						clearInterval(hero_tank_arr[0].moveTimer);
+						hero_tank_arr[0].moveTimer = null;
+					break;
+				}
+				var keyindex = keyArr.indexOf(event.keyCode);
+				keyArr.splice(keyindex,1);
+		}
+		}
+		
+	</script>
+</body>
+</html>

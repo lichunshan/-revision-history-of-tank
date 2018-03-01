@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>坦克大战</title>
+	<link rel="stylesheet" href="./css/index.css">
+	<script src="./js/const.js"></script>
+	<script src="./js/level_class.js"></script>
+	<script src="./js/tools.js"></script>
+</head>
+<body>
+	<canvas id="canvas"></canvas>
+	<canvas id="grass"></canvas>
+	<canvas id="ice"></canvas>
+
+
+	<script src="./js/map_class.js"></script>
+	<script src="./js/tank_class.js"></script>
+	<script src="./js/bullet_class.js"></script>
+	<script>
+		var stage = 1;//关卡
+		var p = 1; //玩家数
+		var tag1 = 1;//两个玩家坦克的标识
+		var tag2 = 2;
+		var keyArr = [];//键盘按键数组
+		var hero_tank_arr = [];//存放玩家坦克对象，作为参数传递
+		var enemy_tank_arr = [];//敌方坦克数组
+		var des_enemy_arr = [];//消灭掉的敌方坦克数组
+		var totalenemy = 1;//已经出现的敌方坦克总数
+		var allTanks = [];//用于存放我方和敌方坦克
+		var creatEnemyTankTimer = null;
+		var sum = 0;//改变敌方坦克方向的随机数
+		var canvas = document.getElementById("canvas");
+		var gcanvas = document.getElementById("grass");
+		var icanvas = document.getElementById("ice");
+		canvas.width = SCREEN_W;
+		canvas.height = SCREEN_H;
+		gcanvas.width = SCREEN_W;
+		gcanvas.height = SCREEN_H;
+		icanvas.width = SCREEN_W;
+		icanvas.height = SCREEN_H;
+		// canvas.style.background = SCREEN_C;
+		// gcanvas.style.background = SCREEN_C;
+		icanvas.style.background = SCREEN_C;
+		var ctx = canvas.getContext("2d");
+		var gctx = gcanvas.getContext("2d");
+		var ictx = icanvas.getContext("2d");
+		var map = new Map();
+		//根据玩家数创建坦克
+		if(p == 1){
+			var tank = new Hero(PLAYER1);
+			var live ;
+			hero_tank_arr.push(tank);
+			setInterval(function(){
+				for(var i=0;i<hero_tank_arr.length;i++){
+					// alert(hero_tank_arr[i].lives);
+					if(hero_tank_arr[i].lives>0&&hero_tank_arr[i].isDestroy){
+						live = hero_tank_arr[i].lives;
+						hero_tank_arr[i]=null;
+						hero_tank_arr.splice(i,1);
+					hero_tank_arr.push(new Hero(PLAYER1));
+					hero_tank_arr[0].lives = live-1;
+				}
+				}
+				
+			},2000);
+		}else if(p == 2){
+			var tank1 = new Hero(PLAYER1,tag1);
+			var tank2 = new Hero(PLAYER2,tag2);
+			hero_tank_arr.push(tank1);
+			hero_tank_arr.push(tank2);
+		}
+		var enemyTank = new EnemyTank1();
+		enemy_tank_arr.push(enemyTank);
+		setInterval(function(){
+			var fangxiang = parseInt(Math.random()*3);
+			if(enemy_tank_arr.length<4&&totalenemy<20){
+				switch(fangxiang){
+					case 0:
+						var a = new EnemyTank1();
+					break;
+					case 1:
+						var a = new EnemyTank2();
+					break;
+					case 2:
+						var a = new EnemyTank3();
+					break;
+				}
+				
+				a.isAI = true;
+				enemy_tank_arr.push(a);
+				totalenemy++;
+				// alert(totalenemy);
+			}
+		},5000);
+		SOURCE_IMG.onload = function(){
+			//刷新画布
+			//在这里画所有需要画的东西
+			setInterval(function(){
+					map.draw(stage);
+					ctx.clearRect(0,0,512,499);
+					map.draw(stage);
+					//遍历玩家坦克数组
+					// alert(allTanks);
+					for(var i =0;i<hero_tank_arr.length;i++){
+						if(!hero_tank_arr[i].isAttack){
+							hero_tank_arr[i].draw();
+						}else{
+							if(!hero_tank_arr[i].isDestroy){
+								hero_tank_arr[i].destroy();	
+							}
+						}
+						if(hero_tank_arr[i].bullets.length>0){
+							
+							if(hero_tank_arr[i].bullets[i].isHit){
+								
+								if(!hero_tank_arr[i].bullets[i].isDestroy){
+										hero_tank_arr[i].bullets[i].destroy();
+										hero_tank_arr[i].bullets.length = 0;
+								}
+							}else{
+								hero_tank_arr[i].bullets[i].draw();
+							}
+						}
+						
+					}
+					//遍历敌方坦克数组
+					for(var k =0;k<enemy_tank_arr.length;k++){
+						//坦克没有被攻击时
+						if(!enemy_tank_arr[k].isAttack&&enemy_tank_arr.length>0){
+							enemy_tank_arr[k].draw();
+							enemy_tank_arr[k].move();
+							if(!enemy_tank_arr[k].isShooting){
+								 enemy_tank_arr[k].shoot();
+							}
+							//画敌方坦克子弹
+						if(enemy_tank_arr[k].bullets.length>0){
+							if(enemy_tank_arr[k].bullets[0].isHit){
+								
+								if(!enemy_tank_arr[k].bullets[0].isDestroy){
+										enemy_tank_arr[k].bullets[0].destroy();
+										enemy_tank_arr[k].bullets.length = 0;
+										enemy_tank_arr[k].isShooting=false;
+								}
+							}else{
+								enemy_tank_arr[k].bullets[0].draw();
+							}
+						}
+						}else{
+							// 坦克被打中停掉运动定时器
+							clearInterval(enemy_tank_arr[k].moveTimer);
+							des_enemy_arr.push(enemy_tank_arr[k]);
+							// alert(des_enemy_arr);
+							 enemy_tank_arr.splice(k,1);
+						}
+						
+						
+					}
+			},20);
+
+			//监听键盘事件
+			document.body.onkeydown = function(event){
+			if(p == 1){
+				map.draw(stage,hero_tank_arr);
+				//这里不能写死
+				if(!hero_tank_arr[0].isAttack){
+					hero_tank_arr[0].draw();
+					hero_tank_arr[0].shoot();
+					hero_tank_arr[0].move();
+				}
+			}else if(p == 2){
+				map.draw(stage,hero_tank_arr);
+				tank1.draw();
+				tank2.draw();
+				// tank1.shoot();
+				tank1.move(tag1);
+				tank2.move(tag2);
+			}
+			
+		}
+		document.body.onkeyup = function(){
+			
+		}
+		}
+		
+	</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>坦克大战</title>
+</head>
+<body>
+    <canvas id="can1"></canvas>
+    <script>
+        function Tank(ctx,x,y,direct,speed){
+            this.x = x;
+            this.y = y;
+            this.ctx = ctx;
+            this.width = 30;
+            this.height = 30; 
+            this.direct = direct;
+            this.speed = speed;
+            this.draw = function(){
+                var tankimg = new Image();
+                tankimg.src = './images/menu.gif';
+                this.ctx.drawImage(tankimg,0,0,28,30,10,10,28,30);
+            }
+
+        }
+    </script>
+    <script>
+        var canvas = document.getElementById("can1");
+        var ctx = canvas.getContext("2d");
+        canvas.width = 500;
+        canvas.height = 400;
+                var tankimg = new Image();
+                tankimg.src = './images/tankAll.gif';
+                tankimg.onload = function(){
+                    ctx.drawImage(tankimg,0,0,30,30,100,10,30,30);
+                }
+        /************类*****************/
+        // var tank = new Tank(ctx,0,0,1,1);
+        // tank.draw();
+
+    </script>
+</body>
+</html>

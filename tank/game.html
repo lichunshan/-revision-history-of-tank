@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<link rel="stylesheet" href="./css/index.css">
+	<script src="./js/jquery.min.js"></script>
+	<style>
+		#canvasDiv canvas{
+			position:absolute;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<head><h3>操作说明：玩家1：wasd上下左右，space射击；玩家2：方向键，enter射击，n下一关，p上一关</h3></head>
+		<div class="main clearfix">
+			<div id="canvasDiv">
+				<!-- <canvas id="wallCanvas"></canvas> -->
+				<canvas id="tankCanvas"></canvas>
+				<!-- <canvas id="grassCanvas"></canvas> -->
+				<!-- <canvas id="overCanvas"></canvas> -->
+				<!-- <canvas id="stageCanvas"></canvas> -->
+			</div>
+		</div>
+	</div>
+	<script src="./js/const.js"></script>//保存了一些静态变量
+	<script src="./js/tank.js"></script>
+	<script src="./js/main.js"></script>//主逻辑函数
+</body>
+</html>
+
+
